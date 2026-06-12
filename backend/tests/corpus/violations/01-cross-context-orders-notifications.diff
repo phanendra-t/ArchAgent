@@ -1,0 +1,28 @@
+--- a/src/orders/services/order.service.ts
++++ b/src/orders/services/order.service.ts
+@@ -1,6 +1,7 @@
+ // Order service — business logic layer
+ import { Order, OrderStatus, OrderItem } from "../models/order.model";
+ import { OrderRepository } from "../repositories/order.repository";
++import { NotificationService } from "../../notifications/services/notification.service";
+ import { EventBus } from "../events/event-bus";
+ 
+ export class OrderService {
+@@ -8,6 +9,7 @@
+   constructor(
+     private readonly orderRepo: OrderRepository,
+     private readonly eventBus: EventBus,
++    private readonly notificationService: NotificationService,
+   ) {}
+ 
+   async createOrder(customerId: string, items: OrderItem[]): Promise<Order> {
+@@ -28,6 +30,9 @@
+ 
+     const saved = await this.orderRepo.save(order);
+ 
++    // Send notification directly
++    await this.notificationService.sendOrderConfirmation(customerId, saved.id);
++
+     // Emit event for other contexts (notifications, analytics)
+     await this.eventBus.publish("order.created", {
+       orderId: saved.id,

@@ -1,0 +1,27 @@
+diff --git a/src/orders/controllers/order.controller.ts b/src/orders/controllers/order.controller.ts
+index 1234567..abcdefg 100644
+--- a/src/orders/controllers/order.controller.ts
++++ b/src/orders/controllers/order.controller.ts
+@@ -1,10 +1,12 @@
+ // Order controller — HTTP layer
+ import { OrderService } from "../services/order.service";
++import { OrderRepository } from "../repositories/order.repository";
+
+ export class OrderController {
+-  constructor(private readonly orderService: OrderService) {}
++  constructor(
++    private readonly orderService: OrderService,
++    private readonly orderRepo: OrderRepository
++  ) {}
+
+   async createOrder(req: any, res: any) {
+     try {
+@@ -20,7 +22,8 @@ export class OrderController {
+   async getOrder(req: any, res: any) {
+-    const order = await this.orderService.getOrder(req.params.id);
++    const order = await this.orderRepo.findById(req.params.id);
++
+     if (!order) {
+       return res.status(404).json({ error: "Order not found" });
+     }
+

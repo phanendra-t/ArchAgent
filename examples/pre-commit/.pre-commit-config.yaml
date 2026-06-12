@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: archagent-review
+        name: ArchAgent Architectural Review
+        entry: archagent review --staged --intent ./architecture-intent.yaml --fail-on high --quiet
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+        always_run: true
+
+      - id: archagent-validate
+        name: ArchAgent Validate Intent
+        entry: archagent validate ./architecture-intent.yaml
+        language: system
+        pass_filenames: false
+        files: architecture-intent\.ya?ml$
+        stages: [pre-commit]

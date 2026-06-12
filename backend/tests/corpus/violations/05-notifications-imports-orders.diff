@@ -1,0 +1,25 @@
+--- a/src/notifications/services/notification.service.ts
++++ b/src/notifications/services/notification.service.ts
+@@ -1,14 +1,21 @@
+ // Notification service — sends notifications based on domain events
+ import { Notification, NotificationChannel, NotificationStatus } from "../models/notification.model";
++import { OrderRepository } from "../../orders/repositories/order.repository";
++import { Order } from "../../orders/models/order.model";
+ 
+ export class NotificationService {
++  constructor(private readonly orderRepo: OrderRepository) {}
++
+   async sendOrderConfirmation(recipientId: string, orderId: string): Promise<void> {
++    const order = await this.orderRepo.findById(orderId);
++    const itemCount = order ? order.items.length : 0;
++
+     const notification: Notification = {
+       id: crypto.randomUUID(),
+       recipientId,
+       channel: NotificationChannel.EMAIL,
+       subject: "Order Confirmed",
+-      body: `Your order ${orderId} has been confirmed.`,
++      body: `Your order ${orderId} with ${itemCount} items confirmed. Total: $${order?.totalAmount}`,
+       status: NotificationStatus.QUEUED,
+     };
+     await this.send(notification);

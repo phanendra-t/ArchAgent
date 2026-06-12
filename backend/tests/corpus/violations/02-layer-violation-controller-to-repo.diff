@@ -1,0 +1,23 @@
+--- a/src/orders/controllers/order.controller.ts
++++ b/src/orders/controllers/order.controller.ts
+@@ -1,5 +1,6 @@
+ // Order controller — HTTP layer
+ import { OrderService } from "../services/order.service";
++import { OrderRepository } from "../repositories/order.repository";
+ 
+ export class OrderController {
+   constructor(private readonly orderService: OrderService) {}
+@@ -13,4 +14,13 @@
+       res.status(500).json({ error: "Failed to create order" });
+     }
+   }
++
++  async getOrderDirect(req: any, res: any) {
++    // Bypass service layer — directly query repository
++    const order = await this.orderRepo.findById(req.params.id);
++    if (!order) {
++      return res.status(404).json({ error: "Not found" });
++    }
++    res.json(order);
++  }
+ }

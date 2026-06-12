@@ -1,0 +1,136 @@
+schema_version: "1.0"
+system: "ecommerce-order-platform"
+
+project:
+  languages: [typescript]
+
+bounded_contexts:
+  - name: orders
+    description: "Handles order lifecycle from creation to fulfillment"
+    owns:
+      - "src/orders/**"
+    allowed_dependencies:
+      - products
+      - pricing
+    forbidden_dependencies:
+      - notifications
+      - analytics
+
+  - name: payments
+    description: "Payment processing, refunds, and billing"
+    owns:
+      - "src/payments/**"
+    allowed_dependencies:
+      - orders
+    forbidden_dependencies:
+      - products
+      - notifications
+      - analytics
+    security_boundary: true
+
+  - name: notifications
+    description: "All outbound communication (email, SMS, push)"
+    owns:
+      - "src/notifications/**"
+    allowed_dependencies: []
+    forbidden_dependencies:
+      - orders
+      - payments
+      - analytics
+
+  - name: analytics
+    description: "Reporting and business intelligence"
+    owns:
+      - "src/analytics/**"
+    allowed_dependencies: []
+    forbidden_dependencies:
+      - orders
+      - payments
+      - notifications
+
+layers:
+  - name: controller
+    pattern: "src/**/controllers/**"
+    allowed_imports_from:
+      - service
+    forbidden_imports_from:
+      - repository
+      - model
+    rule: "Controllers handle HTTP only — delegate all logic to services"
+
+  - name: service
+    pattern: "src/**/services/**"
+    allowed_imports_from:
+      - repository
+      - model
+      - event
+    forbidden_imports_from:
+      - controller
+    rule: "Services contain business logic — no HTTP awareness"
+
+  - name: repository
+    pattern: "src/**/repositories/**"
+    allowed_imports_from:
+      - model
+    forbidden_imports_from:
+      - controller
+      - service
+    rule: "Repositories handle data access only"
+
+  - name: model
+    pattern: "src/**/models/**"
+    allowed_imports_from: []
+    forbidden_imports_from:
+      - controller
+      - service
+      - repository
+    rule: "Models are pure data structures — no dependencies"
+
+dependency_rules:
+  - name: "no-circular-context-deps"
+    description: "Bounded contexts must not form dependency cycles"
+    type: acyclic
+
+  - name: "no-cross-context-model-sharing"
+    description: "Domain models must not be imported across context boundaries"
+    rule: "A model in src/orders/models/ must never be imported from src/payments/"
+
+communication_patterns:
+  - between: [orders, notifications]
+    allowed: event
+    forbidden: direct
+    reason: "Orders emits events; Notifications subscribes. No direct coupling."
+
+  - between: [orders, payments]
+    allowed: direct
+    pattern: "via PaymentGateway interface only"
+
+  - between: [any, analytics]
+    allowed: event
+    forbidden: direct
+    reason: "Analytics is a read-model populated by domain events only"
+
+security_rules:
+  - context: payments
+    constraints:
+      - "No logging of card numbers, CVV, or full account numbers"
+      - "All external API calls must use HTTPS"
+      - "No PII in error messages or stack traces"
+      - "New dependencies require security review"
+
+  - context: orders
+    constraints:
+      - "Customer email/phone must not appear in debug logs"
+
+principles:
+  - name: "event-driven-communication"
+    description: "Cross-context communication should prefer domain events over direct calls"
+    severity: warning
+
+  - name: "single-writer-principle"
+    description: "Each entity has exactly one context that owns writes to it"
+    severity: critical
+
+  - name: "no-shared-database"
+    description: "Each context owns its data store — no shared tables"
+    severity: critical

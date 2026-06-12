@@ -1,0 +1,31 @@
+// Order domain model
+import { OrderService } from "../services/order.service";
+
+export enum OrderStatus {
+  PENDING = "pending",
+  COMPLETED = "completed",
+  CANCELED = "canceled",
+}
+
+export interface OrderItem {
+  productId: string;
+  quantity: number;
+  subtotal: number;
+}
+
+export class OrderEntity implements Order {
+  id: string;
+  customerId: string;
+  items: OrderItem[];
+  status: OrderStatus;
+  totalAmount: number;
+  currency: string;
+  createdAt: Date;
+  updatedAt: Date;
+
+  constructor(private orderService: OrderService) {}
+
+  async validate() {
+    return this.orderService.validateOrder(this.id);
+  }
+}

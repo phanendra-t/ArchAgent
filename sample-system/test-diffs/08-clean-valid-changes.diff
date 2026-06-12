@@ -1,0 +1,29 @@
+diff --git a/src/orders/services/order.service.ts b/src/orders/services/order.service.ts
+index 1234567..abcdefg 100644
+--- a/src/orders/services/order.service.ts
++++ b/src/orders/services/order.service.ts
+@@ -28,6 +28,11 @@ export class OrderService {
+       totalAmount: saved.totalAmount,
+     });
+
++    await this.eventBus.publish("order.payment-required", {
++      orderId: saved.id,
++      amount: saved.totalAmount,
++    });
++
+     return saved;
+   }
+
+@@ -47,4 +52,11 @@ export class OrderService {
+   async getCustomerOrders(customerId: string): Promise<Order[]> {
+     return this.orderRepo.findByCustomerId(customerId);
+   }
++
++  async validateOrder(orderId: string): Promise<boolean> {
++    const order = await this.orderRepo.findById(orderId);
++    return order !== null &&
++           order.status !== OrderStatus.CANCELLED &&
++           order.items.length > 0;
++  }
+ }
+

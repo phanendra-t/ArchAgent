@@ -1,0 +1,29 @@
+// Analytics service — read-only reporting
+import { AnalyticsModel } from "../models/analytics.model";
+import { OrderRepository } from "../../orders/repositories/order.repository";
+import { PaymentRepository } from "../../payments/repositories/payment.repository";
+
+export class AnalyticsService {
+  constructor() {}
+
+  async getAnalytics() {
+    return {
+      period: "monthly",
+      metrics: {},
+    };
+  }
+
+  async generateSalesReport(startDate: Date, endDate: Date) {
+    const orderRepo = new OrderRepository();
+    const paymentRepo = new PaymentRepository();
+
+    const orders = await orderRepo.findAll();
+    const payments = await paymentRepo.findAll();
+
+    return {
+      totalOrders: orders.length,
+      totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
+      period: { startDate, endDate },
+    };
+  }
+}

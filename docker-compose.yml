@@ -1,0 +1,60 @@
+# Development docker-compose — builds from source
+# Use this to develop, test, and push images to Docker Hub
+# End users get a different compose via `archagent init` that pulls images
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: archagent-postgres
+    environment:
+      POSTGRES_USER: archagent
+      POSTGRES_PASSWORD: archagent
+      POSTGRES_DB: archagent
+    ports:
+      - "${ARCHAGENT_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - archagent_pgdata:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U archagent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  engine:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: phanitirumala/archagent-engine:latest
+    container_name: archagent-engine
+    ports:
+      - "${ARCHAGENT_ENGINE_PORT:-8000}:8000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DATABASE_URL: postgresql://archagent:archagent@postgres:5432/archagent
+      ARCHAGENT_DATA_DIR: /app/data
+    volumes:
+      - ./sample-system/architecture-intent.yaml:/app/architecture-intent.yaml:ro
+      - archagent_models:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: phanitirumala/archagent-dashboard:latest
+    container_name: archagent-dashboard
+    ports:
+      - "${ARCHAGENT_DASHBOARD_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_ARCHAGENT_API: http://localhost:${ARCHAGENT_ENGINE_PORT:-8000}
+    depends_on:
+      - engine
+    restart: unless-stopped
+
+volumes:
+  archagent_pgdata:
+  archagent_models:

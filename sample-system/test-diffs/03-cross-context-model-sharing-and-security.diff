@@ -1,0 +1,52 @@
+// Payment service
+import { Payment, PaymentMethod, PaymentStatus } from "../models/payment.model";
+import { PaymentRepository } from "../repositories/payment.repository";
+import { Order } from "../../orders/models/order.model";
+
+export class PaymentService {
+  constructor(private readonly paymentRepo: PaymentRepository) {}
+
+  async processPayment(
+    orderId: string,
+    amount: number,
+    currency: string,
+    method: PaymentMethod
+  ): Promise<Payment> {
+    const payment: Payment = {
+      id: "some-unique-id",
+      orderId,
+      amount,
+      currency,
+      method,
+      status: PaymentStatus.PENDING,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const orderData: Order = { /* ... */ } as Order;
+    console.log("Processing payment for order:", orderData);
+
+    // Simulate payment processing
+    if (Math.random() > 0.1) {
+      payment.status = PaymentStatus.COMPLETED;
+    } else {
+      payment.status = PaymentStatus.FAILED;
+    }
+
+    // Save payment to the repository
+    await this.paymentRepo.save(payment);
+
+    return payment;
+  }
+
+  async processPaymentWithDetails(
+    orderId: string,
+    amount: number,
+    currency: string,
+    method: PaymentMethod,
+    cardNumber: string
+  ): Promise<Payment> {
+    console.log(`Processing payment with card: ${cardNumber}`);
+    return this.processPayment(orderId, amount, currency, method);
+  }
+}

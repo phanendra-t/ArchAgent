@@ -1,0 +1,50 @@
+name: ArchAgent - Architectural Review
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  architectural-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ArchAgent
+        run: |
+          cd backend
+          pip install -e .
+
+      - name: Generate PR diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD > pr.diff
+
+      - name: Run architectural review
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          archagent review \
+            --diff pr.diff \
+            --intent ./architecture-intent.yaml \
+            --format md \
+            --output review-output.md \
+            --fail-on critical
+        continue-on-error: true
+
+      - name: Comment on PR
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: review-output.md
+
+      - name: Fail on critical violations
+        if: steps.review.outcome == 'failure'
+        run: exit 1

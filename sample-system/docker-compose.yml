@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: archagent
+      POSTGRES_PASSWORD: archagent
+      POSTGRES_DB: archagent
+    volumes:
+      - archagent_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U archagent"]
+      interval: 10s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  engine:
+    image: phanitirumala/archagent-engine:latest
+    ports:
+      - "8000:8000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DATABASE_URL: postgresql://archagent:archagent@postgres:5432/archagent
+      ARCHAGENT_DATA_DIR: /app/data
+    volumes:
+      - ./architecture-intent.yaml:/app/architecture-intent.yaml:ro
+      - archagent_models:/app/data
+      - ./src:/workspace/src:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dashboard:
+    image: phanitirumala/archagent-dashboard:latest
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_ARCHAGENT_API: http://localhost:8000
+    depends_on:
+      - engine
+    restart: unless-stopped
+
+volumes:
+  archagent_pgdata:
+  archagent_models:
+

@@ -1,0 +1,22 @@
+--- a/src/payments/services/payment.service.ts
++++ b/src/payments/services/payment.service.ts
+@@ -1,6 +1,7 @@
+ // Payment service — business logic for payment processing
+ import { Payment, PaymentMethod, PaymentStatus } from "../models/payment.model";
+ import { PaymentRepository } from "../repositories/payment.repository";
++import { AnalyticsService } from "../../analytics/services/analytics.service";
+ 
+ export class PaymentService {
+   constructor(private readonly paymentRepo: PaymentRepository) {}
+@@ -8,4 +9,11 @@
+   async processPayment(orderId: string, amount: number): Promise<Payment> {
+     return {} as Payment;
+   }
++
++  async getPaymentWithTracking(paymentId: string): Promise<any> {
++    const payment = await this.paymentRepo.findById(paymentId);
++    const analytics = new AnalyticsService();
++    await analytics.recordEvent("payment_viewed", { paymentId });
++    return payment;
++  }
+ }

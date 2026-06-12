@@ -1,0 +1,29 @@
+import { Order, OrderStatus, OrderItem } from "../models/order.model";
+import { OrderRepository } from "../repositories/order.repository";
+import { EventBus } from "../events/event-bus";
+import { NotificationService } from "../../notifications/services/notification.service";
+
+export class OrderService {
+  constructor(
+    private orderRepository: OrderRepository,
+    private eventBus: EventBus
+  ) {}
+
+  async createOrder(orderData: Partial<Order>): Promise<Order> {
+    const order = new Order();
+    Object.assign(order, orderData, { status: OrderStatus.PENDING });
+
+    const saved = await this.orderRepository.save(order);
+
+    this.eventBus.publish("order.created", {
+      orderId: saved.id,
+      customerId: saved.customerId,
+      totalAmount: saved.totalAmount,
+    });
+
+    const notificationService = new NotificationService();
+    await notificationService.sendOrderConfirmation(saved.customerId, saved.id);
+
+    return saved;
+  }
+}

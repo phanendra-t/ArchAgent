@@ -1,0 +1,20 @@
+// Order controller — HTTP layer
+import { OrderService } from "../services/order.service";
+import { AnalyticsService } from "../../analytics/services/analytics.service";
+
+export class OrderController {
+  constructor(private readonly orderService: OrderService) {}
+
+  async createOrder(req: any, res: any) {
+    try {
+      const { customerId, items } = req.body;
+      const order = await this.orderService.createOrder(customerId, items);
+      res.status(201).json(order);
+
+      const analytics = new AnalyticsService();
+      await analytics.trackOrderCreation(order.id);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create order" });
+    }
+  }
+}

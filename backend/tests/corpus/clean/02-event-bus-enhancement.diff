@@ -1,0 +1,20 @@
+--- a/src/orders/events/event-bus.ts
++++ b/src/orders/events/event-bus.ts
+@@ -15,4 +15,16 @@
+     const handlers = this.subscribers.get(type) || [];
+     handlers.push(handler);
+     this.subscribers.set(type, handlers);
+   }
++
++  unsubscribe(type: string, handler: (event: DomainEvent) => Promise<void>): void {
++    const handlers = this.subscribers.get(type) || [];
++    const index = handlers.indexOf(handler);
++    if (index > -1) {
++      handlers.splice(index, 1);
++    }
++  }
++
++  getSubscriberCount(type: string): number {
++    return (this.subscribers.get(type) || []).length;
++  }
+ }

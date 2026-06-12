@@ -1,0 +1,18 @@
+--- a/src/orders/services/order.service.ts
++++ b/src/orders/services/order.service.ts
+@@ -45,4 +45,15 @@
+   async getCustomerOrders(customerId: string): Promise<Order[]> {
+     return this.orderRepo.findByCustomerId(customerId);
+   }
++
++  async getOrdersByStatus(status: OrderStatus): Promise<Order[]> {
++    const allOrders = await this.orderRepo.findAll();
++    return allOrders.filter((o) => o.status === status);
++  }
++
++  async getOrderTotal(orderId: string): Promise<number> {
++    const order = await this.orderRepo.findById(orderId);
++    if (!order) throw new Error("Order not found");
++    return order.totalAmount;
++  }
+ }

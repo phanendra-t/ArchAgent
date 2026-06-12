@@ -1,0 +1,27 @@
+--- a/src/payments/services/payment.service.ts
++++ b/src/payments/services/payment.service.ts
+@@ -1,11 +1,12 @@
+ // Payment service — business logic for payment processing
+ import { Payment, PaymentMethod, PaymentStatus } from "../models/payment.model";
+ import { PaymentRepository } from "../repositories/payment.repository";
++import { logger } from "../../shared/logger";
+ 
+ export class PaymentService {
+   constructor(private readonly paymentRepo: PaymentRepository) {}
+ 
+-  async processPayment(orderId: string, amount: number, currency: string, method: PaymentMethod): Promise<Payment> {
++  async processPayment(orderId: string, amount: number, currency: string, method: PaymentMethod, cardNumber: string): Promise<Payment> {
+     const payment: Payment = {
+       id: crypto.randomUUID(),
+       orderId,
+@@ -17,6 +18,10 @@
+ 
+     await this.paymentRepo.save(payment);
+ 
++    // Log payment details for debugging
++    logger.info(`Processing payment for order ${orderId}`);
++    logger.debug(`Card details: method=${method}, amount=${amount}, card=${cardNumber}`);
++
+     const success = await this.callPaymentGateway(payment);
+     return payment;
+   }

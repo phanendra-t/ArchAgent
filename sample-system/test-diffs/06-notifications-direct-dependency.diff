@@ -1,0 +1,21 @@
+// Notification service — handles all outbound communications
+import { Notification, NotificationType } from "../models/notification.model";
+import { OrderService } from "../../orders/services/order.service";
+
+export class NotificationService {
+  constructor(private readonly orderService: OrderService) {}
+
+  async sendOrderConfirmation(customerId: string, orderId: string): Promise<void> {
+    const order = await this.orderService.getOrder(orderId);
+
+    const notification: Notification = {
+      id: crypto.randomUUID(),
+      type: NotificationType.EMAIL,
+      // other properties
+    };
+
+    // logic to send notification
+  }
+
+  // other methods
+}

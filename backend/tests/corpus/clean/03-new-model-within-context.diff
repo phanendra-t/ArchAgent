@@ -1,0 +1,18 @@
+--- /dev/null
++++ b/src/payments/models/refund.model.ts
+@@ -0,0 +1,15 @@
++// Refund model — within payments context
++export interface Refund {
++  id: string;
++  paymentId: string;
++  amount: number;
++  reason: string;
++  status: RefundStatus;
++  processedAt?: Date;
++}
++
++export enum RefundStatus {
++  PENDING = "pending",
++  PROCESSED = "processed",
++  REJECTED = "rejected",
++}
